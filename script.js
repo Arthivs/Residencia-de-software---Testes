@@ -1,65 +1,61 @@
+// script.js
 document.addEventListener('DOMContentLoaded', () => {
 
-  // --- 1. LÓGICA DE AUTENTICAÇÃO REAL ---
+  // --- LÓGICA PARA AUTENTICAÇÃO E REDIRECIONAMENTO ---
   const loginForm = document.querySelector('form');
-  
-  // Seleciona os campos de input pelo type (ou ID, se preferir)
   const emailInput = document.querySelector('input[type="email"]');
   const passwordInput = document.querySelector('input[type="password"]');
 
-  if (loginForm) {
-      loginForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
+  loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
 
-        const email = emailInput ? emailInput.value : '';
-        const password = passwordInput ? passwordInput.value : '';
+    const email = emailInput.value;
+    const password = passwordInput.value;
 
-        if (!email || !password) {
-            alert('Por favor, preencha e-mail e senha.');
-            return;
+    try {
+        const response = await fetch('http://localhost:3000/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // SUCESSO: Armazena o Token JWT e redireciona
+            
+            // NOVO: Salva o Token no localStorage
+            localStorage.setItem('authToken', data.token); 
+            // Opcional: Salva o nome do usuário para exibir na outra tela
+            localStorage.setItem('userName', data.user.nome); 
+            
+            alert(`Bem-vindo, ${data.user.nome}!`);
+            window.location.href = 'main.html';
+        } else {
+            // Falha: Exibe mensagem de erro
+            alert(data.message || 'Erro de login. Tente novamente.');
+            passwordInput.value = ''; // Limpa a senha
         }
 
-        try {
-            // Requisição POST para o backend
-            const response = await fetch('http://localhost:3000/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
+    } catch (error) {
+        console.error('Erro na comunicação com o servidor:', error);
+        alert('Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
+    }
+  });
 
-            const data = await response.json();
 
-            if (response.ok) {
-                // SUCESSO: SALVA O TOKEN E O NOME
-                localStorage.setItem('authToken', data.token); 
-                localStorage.setItem('userName', data.user.nome); 
-                
-                alert(`Login realizado com sucesso! Bem-vindo(a), ${data.user.nome}!`);
-                window.location.href = 'main.html';
-            } else {
-                // FALHA: Erro de autenticação
-                alert(data.message || 'Erro de autenticação. Tente novamente.');
-                if (passwordInput) passwordInput.value = ''; 
-            }
-
-        } catch (error) {
-            console.error('Erro na comunicação com o servidor:', error);
-            alert('Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
-        }
-      });
-  }
-
-  // --- 2. LÓGICA PARA O EFEITO DE LUZ NO BOTÃO (Mantida) ---
+  // --- LÓGICA PARA O EFEITO DE LUZ NO BOTÃO ---
   const loginButton = document.querySelector('.btn');
 
-  if (loginButton) {
-      loginButton.addEventListener('mousemove', (event) => {
-        const rect = event.target.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+  loginButton.addEventListener('mousemove', (event) => {
+    const rect = event.target.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
 
-        event.target.style.setProperty('--mouse-x', `${x}px`);
-        event.target.style.setProperty('--mouse-y', `${y}px`);
-      });
-  }
+    event.target.style.setProperty('--mouse-x', `${x}px`);
+    event.target.style.setProperty('--mouse-y', `${y}px`);
+  });
+
 });
